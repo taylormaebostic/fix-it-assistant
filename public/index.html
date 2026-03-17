@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix-It Assistant - Solve Any Problem</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .logo { font-size: 60px; margin-bottom: 10px; }
+        
+        .title {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle { color: #8892b0; font-size: 18px; }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .category-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(79,172,254,0.2);
+            border-radius: 16px;
+            padding: 25px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .category-card:hover {
+            border-color: #4facfe;
+            transform: translateY(-5px);
+            background: rgba(79,172,254,0.1);
+        }
+        
+        .category-card.active {
+            border-color: #4facfe;
+            background: rgba(79,172,254,0.15);
+        }
+        
+        .category-icon { font-size: 40px; margin-bottom: 10px; }
+        .category-name { font-size: 14px; font-weight: 600; }
+        
+        .issues-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .issues-section.active { display: block; }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        
+        .issues-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .issue-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .issue-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+        
+        .issue-header:hover { background: rgba(255,255,255,0.05); }
+        
+        .issue-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .issue-arrow {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .issue-card.open .issue-arrow { transform: rotate(180deg); }
+        
+        .issue-solution {
+            display: none;
+            padding: 0 20px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .issue-card.open .issue-solution { display: block; }
+        
+        .solution-steps {
+            list-style: none;
+            counter-reset: step;
+        }
+        
+        .solution-steps li {
+            counter-increment: step;
+            padding: 12px 0;
+            padding-left: 40px;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #ccd6f6;
+            line-height: 1.6;
+        }
+        
+        .solution-steps li:before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            width: 28px;
+            height: 28px;
+            background: #4facfe;
+            color: #0d1b2a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .warning-box {
+            background: rgba(255,193,7,0.1);
+            border: 1px solid rgba(255,193,7,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            color: #ffc107;
+            font-size: 14px;
+        }
+        
+        .warning-box strong { display: block; margin-bottom: 5px; }
+        
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .title { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔧</div>
+            <h1 class="title">Fix-It Assistant</h1>
+            <p class="subtitle">Click a category to see common problems & solutions</p>
+        </div>
+        
+        <div id="categories-view">
+            <div class="categories-grid">
+                <div class="category-card" onclick="showCategory('pets')">
+                    <div class="category-icon">🐕</div>
+                    <div class="category-name">Pets</div>
+                </div>
+                <div class="category-card" onclick="showCategory('cars')">
+                    <div class="category-icon">🚗</div>
+                    <div class="category-name">Cars</div>
+                </div>
+                <div class="category-card" onclick="showCategory('home')">
+                    <div class="category-icon">🏠</div>
+                    <div class="category-name">Home Repair</div>
+                </div>
+                <div class="category-card" onclick="showCategory('tech')">
+                    <div class="category-icon">💻</div>
+                    <div class="category-name">Technology</div>
+                </div>
+                <div class="category-card" onclick="showCategory('appliances')">
+                    <div class="category-icon">🧊</div>
+                    <div class="category-name">Appliances</div>
+                </div>
+                <div class="category-card" onclick="showCategory('diy')">
+                    <div class="category-icon">🔨</div>
+                    <div class="category-name">DIY</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="issues-view" class="issues-section">
+            <div class="section-header">
+                <h2 class="section-title"><span id="category-icon">🐕</span> <span id="category-title">Pets</span></h2>
+                <button class="back-btn" onclick="goBack()">← Back to Categories</button>
+            </div>
+            <div class="issues-list" id="issues-list"></div>
+        </div>
+        
+        <div class="footer">
+            💙 Part of <strong>Boz Life Store</strong> • Making Life Simple
+        </div>
+    </div>
+
+    <script>
+        const issuesData = {
+            pets: {
+                icon: '🐕',
+                title: 'Pet Problems',
+                issues: [
+                    {
+                        title: '🐶 Dog won\'t stop barking',
+                        steps: [
+                            'Identify the trigger (doorbell, other dogs, boredom)',
+                            'Don\'t yell - it sounds like barking to them',
+                            'Redirect attention with a toy or treat',
+                            'Teach "quiet" command with positive reinforcement',
+                            'Ensure they get enough exercise (tired dogs bark less)',
+                            'Consider a white noise machine for external triggers'
+                        ],
+                        warning: 'Sudden excessive barking can indicate pain or illness. Consult a vet if behavior changes suddenly.'
+                    },
+                    {
+                        title: '🐱 Cat not using litter box',
+                        steps: [
+                            'Clean the litter box thoroughly (cats hate dirty boxes)',
+                            'Try a different type of litter',
+                            'Move the box to a quiet, private location',
+                            'Add another litter box (rule: 1 per cat + 1 extra)',
+                            'Check for medical issues like UTI',
+                            'Remove any strong scents near the box'
+                        ],
+                        warning: 'Urinating outside the box can signal kidney disease or diabetes. See a vet if it persists.'
+                    },
+                    {
+                        title: '🐕 Dog has fleas',
+                        steps: [
+                            'Give dog a bath with flea shampoo',
+                            'Use a flea comb while fur is wet',
+                            'Apply vet-recommended flea treatment',
+                            'Wash all bedding in hot water',
+                            'Vacuum carpets and furniture thoroughly',
+                            'Treat your yard if dog goes outside'
+                        ],
+                        warning: 'Never use dog flea products on cats - they can be toxic!'
+                    }
+                ]
+            },
+            cars: {
+                icon: '🚗',
+                title: 'Car Problems',
+                issues: [
+                    {
+                        title: '🔋 Car won\'t start (clicking sound)',
+                        steps: [
+                            'Turn off all accessories (radio, lights, AC)',
+                            'Check battery terminals for corrosion (white/green buildup)',
+                            'Clean terminals with baking soda + water if corroded',
+                            'Try jump starting with another vehicle',
+                            'If jump works, drive for 20+ minutes to recharge',
+                            'If battery is 3+ years old, consider replacement'
+                        ],
+                        warning: 'Never let jumper cable clamps touch each other when connected to a battery!'
+                    },
+                    {
+                        title: '🌡️ Car overheating',
+                        steps: [
+                            'Pull over safely and turn off AC',
+                            'Turn ON heater to pull heat from engine',
+                            'Pop the hood but DON\'T open radiator cap yet',
+                            'Wait 30+ minutes for engine to cool',
+                            'Check coolant level when cool (add if low)',
+                            'Look for leaks under the car'
+                        ],
+                        warning: 'Never open a hot radiator cap - steam can cause severe burns!'
+                    },
+                    {
+                        title: '🛞 Flat tire',
+                        steps: [
+                            'Pull to a safe, flat surface away from traffic',
+                            'Turn on hazard lights',
+                            'Get spare tire, jack, and lug wrench from trunk',
+                            'Loosen lug nuts slightly BEFORE jacking up',
+                            'Jack up car until tire is off ground',
+                            'Remove lugs, swap tire, hand-tighten lugs in star pattern',
+                            'Lower car, then fully tighten lugs'
+                        ],
+                        warning: 'Spare tires are temporary - don\'t exceed 50 mph and replace ASAP.'
+                    }
+                ]
+            },
+            home: {
+                icon: '🏠',
+                title: 'Home Repair',
+                issues: [
+                    {
+                        title: '🚽 Toilet won\'t stop running',
+                        steps: [
+                            'Remove tank lid and look inside',
+                            'Check if the flapper (rubber piece at bottom) is sealing',
+                            'If flapper is warped/worn, replace it ($5 at hardware store)',
+                            'Check the float - it should stop water at fill line',
+                            'Adjust float arm if water is too high',
+                            'If fill valve is faulty, replace entire assembly'
+                        ],
+                        warning: 'Turn off water supply valve (behind toilet) before making repairs.'
+                    },
+                    {
+                        title: '💧 Clogged drain',
+                        steps: [
+                            'Try a plunger first (use sink plunger, not toilet)',
+                            'Remove visible hair/debris from drain opening',
+                            'Pour boiling water down the drain',
+                            'Try baking soda + vinegar (1/2 cup each, wait 30 min)',
+                            'Use a drain snake for deeper clogs',
+                            'Chemical drain cleaners are last resort'
+                        ],
+                        warning: 'Never mix different chemical drain cleaners - toxic fumes!'
+                    },
+                    {
+                        title: '💡 Light switch not working',
+                        steps: [
+                            'Check if bulb is burned out first',
+                            'Try the bulb in another fixture to test it',
+                            'Check your circuit breaker panel for tripped breakers',
+                            'If breaker is tripped, flip it OFF then ON',
+                            'If breaker keeps tripping, call an electrician',
+                            'Replace switch if breaker and bulb are fine'
+                        ],
+                        warning: 'Always turn off power at breaker before touching any wiring!'
+                    }
+                ]
+            },
+            tech: {
+                icon: '💻',
+                title: 'Technology',
+                issues: [
+                    {
+                        title: '📶 WiFi not working',
+                        steps: [
+                            'Check if other devices can connect (isolate the problem)',
+                            'Turn WiFi off and on again on your device',
+                            'Restart your router (unplug for 30 seconds)',
+                            'Move closer to the router',
+                            'Forget the network and reconnect with password',
+                            'Check for router firmware updates'
+                        ],
+                        warning: 'Write down your WiFi password before resetting your router!'
+                    },
+                    {
+                        title: '🖥️ Computer running slow',
+                        steps: [
+                            'Restart the computer (fixes most issues)',
+                            'Close unused browser tabs and programs',
+                            'Check available storage (need 10-15% free)',
+                            'Run disk cleanup to remove temp files',
+                            'Scan for malware/viruses',
+                            'Check for system updates'
+                        ],
+                        warning: 'Back up important files before major system changes.'
+                    },
+                    {
+                        title: '📱 Phone battery draining fast',
+                        steps: [
+                            'Check battery usage in settings to find culprit apps',
+                            'Turn off location services for apps that don\'t need it',
+                            'Reduce screen brightness',
+                            'Turn off background app refresh',
+                            'Disable push email (fetch manually instead)',
+                            'Consider replacing battery if phone is 2+ years old'
+                        ],
+                        warning: 'Extreme heat damages batteries - don\'t leave phone in hot car.'
+                    }
+                ]
+            },
+            appliances: {
+                icon: '🧊',
+                title: 'Appliances',
+                issues: [
+                    {
+                        title: '🧊 Fridge not cold enough',
+                        steps: [
+                            'Check that vents inside aren\'t blocked by food',
+                            'Clean the condenser coils (back/bottom of fridge)',
+                            'Make sure door seals are clean and tight',
+                            'Check temperature settings (37°F fridge, 0°F freezer)',
+                            'Don\'t overfill - air needs to circulate',
+                            'Listen for compressor running (humming sound)'
+                        ],
+                        warning: 'Spoiled food can make you sick - when in doubt, throw it out.'
+                    },
+                    {
+                        title: '🫧 Dishwasher not cleaning well',
+                        steps: [
+                            'Clean the filter (bottom of dishwasher)',
+                            'Check spray arms for clogs (poke out debris)',
+                            'Use hot water (run sink until hot before starting)',
+                            'Don\'t pre-rinse too much (soap needs food to work)',
+                            'Use rinse aid for spot-free dishes',
+                            'Run an empty cycle with vinegar monthly'
+                        ],
+                        warning: 'Never use regular dish soap - it will create a foam explosion!'
+                    },
+                    {
+                        title: '👕 Washer shaking violently',
+                        steps: [
+                            'Make sure washer is level (adjust feet)',
+                            'Don\'t overload - clothes need room to move',
+                            'Distribute heavy items evenly in drum',
+                            'Check that shipping bolts were removed (new washers)',
+                            'Inspect shock absorbers for damage',
+                            'Make sure floor is sturdy (not sagging)'
+                        ],
+                        warning: 'Unplug washer before inspecting internal parts.'
+                    }
+                ]
+            },
+            diy: {
+                icon: '🔨',
+                title: 'DIY Projects',
+                issues: [
+                    {
+                        title: '🖼️ Hanging something heavy on wall',
+                        steps: [
+                            'Find a wall stud with a stud finder (most secure)',
+                            'Mark the spot with painter\'s tape',
+                            'If no stud, use appropriate wall anchor for weight',
+                            'Pre-drill a hole slightly smaller than anchor/screw',
+                            'Drive in anchor, then screw',
+                            'For very heavy items, use multiple anchors or toggle bolts'
+                        ],
+                        warning: 'Check for electrical wires and pipes before drilling into walls.'
+                    },
+                    {
+                        title: '🎨 Paint job looks streaky',
+                        steps: [
+                            'Use quality paint and rollers (don\'t cheap out)',
+                            'Prime the wall first, especially over dark colors',
+                            'Maintain a "wet edge" - don\'t let paint dry mid-wall',
+                            'Roll in a W pattern, then fill in',
+                            'Apply 2-3 thin coats instead of 1 thick coat',
+                            'Don\'t press too hard on the roller'
+                        ],
+                        warning: 'Ensure good ventilation and wear a mask when painting.'
+                    },
+                    {
+                        title: '🚪 Squeaky door hinge',
+                        steps: [
+                            'Open and close door to identify which hinge squeaks',
+                            'Apply WD-40 or similar lubricant to hinge pin',
+                            'Move door back and forth to work in lubricant',
+                            'Wipe off excess with a rag',
+                            'For persistent squeaks, remove hinge pin and coat with petroleum jelly',
+                            'Tap pin back in with a hammer'
+                        ],
+                        warning: 'Have someone hold the door while removing hinge pins.'
+                    }
+                ]
+            }
+        };
+
+        function showCategory(category) {
+            const data = issuesData[category];
+            document.getElementById('category-icon').textContent = data.icon;
+            document.getElementById('category-title').textContent = data.title;
+            
+            const issuesList = document.getElementById('issues-list');
+            issuesList.innerHTML = data.issues.map((issue, index) => `
+                <div class="issue-card" id="issue-${index}">
+                    <div class="issue-header" onclick="toggleIssue(${index})">
+                        <div class="issue-title">${issue.title}</div>
+                        <div class="issue-arrow">▼</div>
+                    </div>
+                    <div class="issue-solution">
+                        <ol class="solution-steps">
+                            ${issue.steps.map(step => `<li>${step}</li>`).join('')}
+                        </ol>
+                        ${issue.warning ? `
+                            <div class="warning-box">
+                                <strong>⚠️ Safety Warning:</strong>
+                                ${issue.warning}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('categories-view').style.display = 'none';
+            document.getElementById('issues-view').classList.add('active');
+        }
+
+        function goBack() {
+            document.getElementById('categories-view').style.display = 'block';
+            document.getElementById('issues-view').classList.remove('active');
+        }
+
+        function toggleIssue(index) {
+            const card = document.getElementById(`issue-${index}`);
+            card.classList.toggle('open');
+        }
+    </script>
+</body>
+</html>
